@@ -1,5 +1,5 @@
 # Image-Fusion
-Image fusion implementation in C++ and assembly
+Cython extension for Image-Fusion
 
 
 ## Introduction
@@ -17,11 +17,11 @@ python setup.py build_ext --inplace
 
 ## Performance
 - note: the resolution of the test image is 700x700 which can be found in `asset`
-- run the following code to test the performance: 
+- test platform information: **11th Gen Intel(R) Core(TM) i7-11700K @ 3.60GHz**
+- run the following code to test the performance:
 ```python
 python benchmark.py
 ```
-
 
 <div align="center">
 
