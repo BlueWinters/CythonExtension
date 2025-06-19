@@ -16,9 +16,9 @@ python setup.py build_ext --inplace
 ```
 
 ## Performance
-- note: the resolution of the test image is 700x700 which can be found in `asset`
-- test platform information: **11th Gen Intel(R) Core(TM) i7-11700K @ 3.60GHz**
-- run the following code to test the performance:
+- Note: the resolution of the test image is 700x700 which can be found in `asset`
+- CPU information of the test platform: **11th Gen Intel(R) Core(TM) i7-11700K @ 3.60GHz**
+- Run the following code to test the performance:
 ```python
 python benchmark.py
 ```

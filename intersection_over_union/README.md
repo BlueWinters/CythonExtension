@@ -8,8 +8,8 @@ python setup.py build_ext --inplace
 ```
 
 ## Performance
-- test platform information: **11th Gen Intel(R) Core(TM) i7-11700K @ 3.60GHz**
-- run the following code to test the performance:
+- CPU information of the test platform: **11th Gen Intel(R) Core(TM) i7-11700K @ 3.60GHz**
+- Run the following code to test the performance:
 ```python
 python benchmark.py
 ```
@@ -38,16 +38,20 @@ python benchmark.py
 
 </div>
 
-
-<div align="center">
-
-![Performance](asset/performance1.png)
-
-</div>
-
+- The diagram below shows the performance results of all methods. It is worth noting that, for easier visualization, the time values in the chart are presented in logarithmic scale.
 
 <div align="center">
 
 ![Performance](asset/performance2_logtime.png)
+
+</div>
+
+- In fact, the implementation based on numpy serves only as a reference to showcase the high performance of the cython-extension, even though the batch-level numpy method has also achieved decent results. However, compared to the native C++ method, the latter can still reduce the runtime by more than half. Furthermore, with the support of OpenMP, the best performance of the extension is significantly enhanced. 
+- Therefore, the following diagram only presents the results of the batch-level numpy method, the native C++ method, and further enhancements with OpenMP.
+
+
+<div align="center">
+
+![Performance](asset/performance1.png)
 
 </div>
