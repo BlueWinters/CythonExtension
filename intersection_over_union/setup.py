@@ -22,7 +22,7 @@ setup(
             language='c++',
             extra_compile_args=["-fopenmp", "-std=c++17"],
             extra_link_args=["-fopenmp", "-std=c++17"],
-            define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")],  # disable numpy deprecation warnings
+            define_macros=[("NPY_NO_DEPRECATED_API", None)],  # disable numpy deprecation warnings
             include_dirs=[numpy.get_include()],
         )
     ],

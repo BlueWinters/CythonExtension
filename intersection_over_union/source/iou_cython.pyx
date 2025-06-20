@@ -8,12 +8,12 @@ np.import_array()  # 初始化 numpy C-API
 cdef extern from "iou.h":
 
     float calculateIOU(
-        float x1, float y1, float x2, float y2, 
-        float x3, float y3, float x4, float y4,
-        bint include_edge);
-    float calculateIOU(
         int x1, int y1, int x2, int y2, 
         int x3, int y3, int x4, int y4,
+        bint include_edge);
+    float calculateIOU(
+        float x1, float y1, float x2, float y2, 
+        float x3, float y3, float x4, float y4,
         bint include_edge);
     double calculateIOU(
         double x1, double y1, double x2, double y2,
