@@ -49,7 +49,9 @@ cdef extern from "iou.h":
         double* iou, bint include_edge);
 
 
-
+"""
+inner function for switch and testing
+"""
 def calculateIOU_int32(
     np.ndarray[np.int32_t, ndim=2]  boxes1, 
     np.ndarray[np.int32_t, ndim=2]  boxes2,
@@ -111,26 +113,50 @@ def calculateIOU_double(
     return iou
 
 
-def calculateIOU(
+"""
+interface for python
+"""
+def computeIOU(
     np.ndarray boxes1,
     np.ndarray boxes2,
     bint with_openmp=True,
     bint include_edge=False,
 ):
     """
-    boxes1: shape=(N,4), dtype=int32/float/double
-    boxes2: shape=(M,4), dtype=int32/float/double
+    boxes1: shape=(N,4) or (4,), dtype=int32/float/double
+    boxes2: shape=(M,4) or (4,), dtype=int32/float/double
     """
-    if boxes1.ndim != 2 or boxes2.ndim != 2 or boxes1.shape[1] != 4 or boxes2.shape[1] != 4:
-        raise ValueError("boxes1/boxes2 must be (N,4)/(M,4) shape")
-    if boxes1.dtype != boxes2.dtype:
-        raise TypeError("boxes1 and boxes2 must have the same dtype")
+    if boxes1.ndim == 1 and boxes2.ndim == 1:
+        if boxes1.shape[0] != 4 or boxes2.shape[0] != 4:
+            raise ValueError("boxes1/boxes2 must be (4,)/(4,) shape")
+        if boxes1.dtype == np.float64 or boxes2.dtype == np.float64:
+            return calculateIOU_double(
+                boxes1[0], boxes1[1], boxes1[2], boxes1[3],
+                boxes2[0], boxes2[1], boxes2[2], boxes2[3], include_edge)
+        elif boxes1.dtype == np.float32 or boxes2.dtype == np.float32:
+            return calculateIOU_float(
+                boxes1[0], boxes1[1], boxes1[2], boxes1[3],
+                boxes2[0], boxes2[1], boxes2[2], boxes2[3], include_edge)
+        elif boxes1.dtype == np.int32 and boxes2.dtype == np.int32:
+            return calculateIOU_int32(
+                boxes1[0], boxes1[1], boxes1[2], boxes1[3],
+                boxes2[0], boxes2[1], boxes2[2], boxes2[3], include_edge)
+        else:
+            raise TypeError("Only int32, float32, float64 dtypes are supported")
 
-    if boxes1.dtype == np.int32:
-        return calculateIOU_int32(boxes1, boxes2, with_openmp, include_edge)
-    elif boxes1.dtype == np.float32:
-        return calculateIOU_float(boxes1, boxes2, with_openmp, include_edge)
-    elif boxes1.dtype == np.double:
-        return calculateIOU_double(boxes1, boxes2, with_openmp, include_edge)
-    else:
-        raise TypeError("Only int32, float32, float64 dtypes are supported")
+    if boxes1.ndim == 2 and boxes2.ndim == 2:
+        if boxes1.shape[1] != 4 or boxes2.shape[1] != 4:
+            raise ValueError("boxes1/boxes2 must be (N,4)/(M,4) shape")
+        if boxes1.dtype != boxes2.dtype:
+            raise TypeError("boxes1 and boxes2 must have the same dtype")
+        if boxes1.dtype == np.int32:
+            return calculateIOU_int32(boxes1, boxes2, with_openmp, include_edge)
+        elif boxes1.dtype == np.float32:
+            return calculateIOU_float(boxes1, boxes2, with_openmp, include_edge)
+        elif boxes1.dtype == np.double:
+            return calculateIOU_double(boxes1, boxes2, with_openmp, include_edge)
+        else:
+            raise TypeError("Only int32, float32, float64 dtypes are supported")
+
+    raise ValueError("boxes1/boxes2 shape must be (N,4)/(N,4) or (4,)/(4,)")
+

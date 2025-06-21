@@ -14,9 +14,10 @@ def functionWrapper(function, prefix):
             output = function(*args, **kwargs)
         end = time.time()
         eclipse = end - beg
-        average = eclipse * 1000 *1000 / num
+        average = eclipse * 1000 * 1000 / num
         # print('success call: {}({:.4f} ns)'.format(
         #     prefix, average))
+        # print(prefix, '\n', output)
         return output, int(average)
     return callFunction
 
@@ -85,6 +86,7 @@ def calculateIOU_NumpyBatchNumba(boxes1, boxes2, include_edge=False):
             iou[i, j] = inter_area / union_area if union_area > 0. else 0.
     return iou
 
+
 def makeBatchBoxes(base):
     box1 = np.array([10, 10, 20, 20], dtype=np.float32)
     box2 = np.array([15, 15, 25, 25], dtype=np.float32)
@@ -96,53 +98,52 @@ def makeBatchBoxes(base):
     boxes = np.ascontiguousarray(boxes)
     return boxes
 
+
 def benchmark(base_list):
-    avearage_time = []
-
-    # num_boxes = []
-    # avearage_time = []
-    # for base in base_list:
-    #     b = makeBatchBoxes(base)
-    #     num_boxes.append(b.shape[0])
-    #     avearage_time.append(functionWrapper(calculateIOU_NumpyBatchFor, 'numpy_batch_for')(b, b, False)[1])
-    # print(num_boxes)
-    # print(avearage_time)
-
-    # num_boxes = []
-    # avearage_time = []
-    # for base in base_list:
-    #     b = makeBatchBoxes(base)
-    #     num_boxes.append(b.shape[0])
-    #     avearage_time.append(functionWrapper(calculateIOU_NumpyBatchMatrix, 'numpy_batch_matrix')(b, b, False)[1])
-    # print(num_boxes)
-    # print(avearage_time)
-
     num_boxes = []
-    avearage_time = []
+    average_time = []
     for base in base_list:
         b = makeBatchBoxes(base)
         num_boxes.append(b.shape[0])
-        avearage_time.append(functionWrapper(calculateIOU_NumpyBatchNumba, 'numpy_batch_numba')(b, b, False)[1])
+        average_time.append(functionWrapper(calculateIOU_NumpyBatchFor, 'numpy_batch_for')(b, b, False)[1])
     print(num_boxes)
-    print(avearage_time)
+    print(average_time)
 
-    # num_boxes = []
-    # avearage_time = []
-    # for base in base_list:
-    #     b = makeBatchBoxes(base)
-    #     num_boxes.append(b.shape[0])
-    #     avearage_time.append(functionWrapper(iou_cython.calculateIOU_float, 'cpp_native')(b, b, False)[1])
-    # print(num_boxes)
-    # print(avearage_time)
+    num_boxes = []
+    average_time = []
+    for base in base_list:
+        b = makeBatchBoxes(base)
+        num_boxes.append(b.shape[0])
+        average_time.append(functionWrapper(calculateIOU_NumpyBatchMatrix, 'numpy_batch_matrix')(b, b, False)[1])
+    print(num_boxes)
+    print(average_time)
 
-    # num_boxes = []
-    # avearage_time = []
-    # for base in base_list:
-    #     b = makeBatchBoxes(base)
-    #     num_boxes.append(b.shape[0])
-    #     avearage_time.append(functionWrapper(iou_cython.calculateIOU_float, 'cpp_openmp')(b, b, True)[1])
-    # print(num_boxes)
-    # print(avearage_time)
+    num_boxes = []
+    average_time = []
+    for base in base_list:
+        b = makeBatchBoxes(base)
+        num_boxes.append(b.shape[0])
+        average_time.append(functionWrapper(calculateIOU_NumpyBatchNumba, 'numpy_batch_numba')(b, b, False)[1])
+    print(num_boxes)
+    print(average_time)
+
+    num_boxes = []
+    average_time = []
+    for base in base_list:
+        b = makeBatchBoxes(base)
+        num_boxes.append(b.shape[0])
+        average_time.append(functionWrapper(iou_cython.calculateIOU_float, 'cpp_native')(b, b, False)[1])
+    print(num_boxes)
+    print(average_time)
+
+    num_boxes = []
+    average_time = []
+    for base in base_list:
+        b = makeBatchBoxes(base)
+        num_boxes.append(b.shape[0])
+        average_time.append(functionWrapper(iou_cython.calculateIOU_float, 'cpp_openmp')(b, b, True)[1])
+    print(num_boxes)
+    print(average_time)
 
 
 if __name__ == '__main__':
