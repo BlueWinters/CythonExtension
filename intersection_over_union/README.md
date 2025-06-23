@@ -35,7 +35,6 @@ python benchmark.py
 | 500           | 145          | 819          | 1374         | 1965095      | 1648         |
 
 
-
 </div>
 
 - The diagram below shows the performance results of all methods. It is worth noting that, for easier visualization, the time values in the chart are presented in logarithmic scale.

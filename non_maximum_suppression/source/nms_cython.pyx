@@ -13,7 +13,7 @@ cdef extern from "nms.h":
         int n_input,
         int* keep_indices,
         int& n_keep,
-        float threshold
+        float iou_threshold
     );
 
     void getResult(

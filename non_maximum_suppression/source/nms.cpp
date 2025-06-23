@@ -9,7 +9,7 @@ void getKeepIndex(
     int n_input,
     int* keep_indices,
     int& n_keep,
-    float threshold
+    float iou_threshold
 ) 
 {
     n_keep = 0;
@@ -49,7 +49,7 @@ void getKeepIndex(
             float h = std::max(0.0f, yy2 - yy1 + 1);
             float inter = w * h;
             float ovr = inter / (areas[i] + areas[j] - inter);
-            if (ovr > threshold) suppressed[j] = true;
+            if (ovr > iou_threshold) suppressed[j] = true;
         }
     }
     delete[] order;
