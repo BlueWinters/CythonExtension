@@ -15,7 +15,7 @@ def functionWrapper(function, prefix):
         end = time.time()
         eclipse = end - beg
         print('success call: {}({}, {:.4f} ns)'.format(
-            prefix, output[0], eclipse * 1000 *1000 / num))
+            prefix, output[0], eclipse * 1000 * 1000 / num))
         return output[1]
     return callFunction
 

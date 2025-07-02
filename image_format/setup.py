@@ -13,12 +13,12 @@ build command
 
 
 setup(
-    name='fusion_cython',
+    name='format_cython',
     cmdclass={'build_ext': build_ext},
     ext_modules=[
         Extension(
-            name='fusion_cython',
-            sources=['source/fusion_cython.pyx', 'source/fusion.cpp'],
+            name='format_cython',
+            sources=['source/format_cython.pyx', 'source/format.cpp'],
             language='c++',
             define_macros=[("NPY_NO_DEPRECATED_API", None)],  # disable numpy deprecation warnings
             extra_compile_args=['-fopenmp', '-msse2', '-mavx2'],
