@@ -26,7 +26,7 @@ def functionWrapper(function, prefix):
 
 
 def check():
-    src = np.ascontiguousarray(cv2.imread('asset/input.png'))
+    src = np.random.randint(0, 255, (512, 512, 3)).astype(np.uint8)
     print(src.shape)
     padding_value = 0
     mean_value = (104, 117, 123)
