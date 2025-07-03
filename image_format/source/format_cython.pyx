@@ -27,8 +27,68 @@ cdef extern from "format.h":
         int& pad_top,
         int& pad_bot,
     );
+
+    int postprocess_native(
+        const unsigned char* src,
+        int src_h,
+        int src_w,
+        int pad_lft,
+        int pad_top,
+        int pad_rig, 
+        int pad_bot,
+        float mean0, 
+        float mean1, 
+        float mean2,
+        float scale0,
+        float scale1,
+        float scale2,
+        unsigned char padding_value,
+        float* dst,
+        int dst_h, 
+        int dst_w
+    );
+
+    int postprocess_openmp1(
+        const unsigned char* src,
+        int src_h,
+        int src_w,
+        int pad_lft,
+        int pad_top,
+        int pad_rig, 
+        int pad_bot,
+        float mean0, 
+        float mean1, 
+        float mean2,
+        float scale0,
+        float scale1,
+        float scale2,
+        unsigned char padding_value,
+        float* dst,
+        int dst_h, 
+        int dst_w
+    );
+
+    int postprocess_openmp2(
+        const unsigned char* src,
+        int src_h,
+        int src_w,
+        int pad_lft,
+        int pad_top,
+        int pad_rig, 
+        int pad_bot,
+        float mean0, 
+        float mean1, 
+        float mean2,
+        float scale0,
+        float scale1,
+        float scale2,
+        unsigned char padding_value,
+        float* dst,
+        int dst_h, 
+        int dst_w
+    );
     
-    int postprocess_openmp(
+    int postprocess_openmp3(
         const unsigned char* src,
         int src_h,
         int src_w,
@@ -48,47 +108,27 @@ cdef extern from "format.h":
         int dst_w
     );
 
-    int postprocess_openmp_avx2(
+    int postprocess_full(
         const unsigned char* src,
         int src_h,
         int src_w,
+        int rsz_h,
+        int rsz_w,
         int pad_lft,
         int pad_top,
-        int pad_rig, 
+        int pad_rig,
         int pad_bot,
-        float mean0, 
-        float mean1, 
+        unsigned char padding_value,
+        float mean0,
+        float mean1,
         float mean2,
         float scale0,
         float scale1,
         float scale2,
-        unsigned char padding_value,
         float* dst,
-        int dst_h, 
+        int dst_h,
         int dst_w
     );
-
-    int postprocess(
-        const unsigned char* src,
-        int src_h,
-        int src_w,
-        int pad_lft,
-        int pad_top,
-        int pad_rig, 
-        int pad_bot,
-        float mean0, 
-        float mean1, 
-        float mean2,
-        float scale0,
-        float scale1,
-        float scale2,
-        unsigned char padding_value,
-        float* dst,
-        int dst_h, 
-        int dst_w,
-        bint enable_avx2
-    );
-
 
 """
 interface for python
@@ -127,10 +167,25 @@ def formatImage(
         pad_top, pad_bot,
     )
 
-    cdef np.ndarray[np.uint8_t, ndim=3, mode="c"] resized = cv2.resize(src, (rsz_w, rsz_h))
     cdef np.ndarray[np.float32_t, ndim=4, mode="c"] bgr_fmt = np.empty((1, 3, dst_h, dst_w), dtype=np.float32)
-    if parallel == 'openmp':
-        flag = postprocess_openmp(
+    if parallel == 'openmp_full':
+        flag = postprocess_full(
+            <const unsigned char*>src.data,
+            src_h, src_w,
+            rsz_h, rsz_w,
+            pad_lft, pad_top,
+            pad_rig, pad_bot,
+            padding_value,
+            mean0, mean1, mean2,
+            scale0, scale1, scale2,
+            <float*>bgr_fmt.data,
+            dst_h, dst_w,
+        )
+        return bgr_fmt, (pad_top, pad_bot, pad_lft, pad_rig), flag
+
+    cdef np.ndarray[np.uint8_t, ndim=3, mode="c"] resized = cv2.resize(src, (rsz_w, rsz_h))
+    if parallel == 'native':
+        flag = postprocess_native(
             <const unsigned char*>resized.data,
             rsz_h, rsz_w,
             pad_lft, pad_top,
@@ -142,8 +197,8 @@ def formatImage(
             dst_h, dst_w,
         )
         return bgr_fmt, (pad_top, pad_bot, pad_lft, pad_rig), flag
-    if parallel == 'openmp_avx2':
-        flag = postprocess_openmp_avx2(
+    if parallel == 'openmp1':
+        flag = postprocess_openmp1(
             <const unsigned char*>resized.data,
             rsz_h, rsz_w,
             pad_lft, pad_top,
@@ -155,6 +210,33 @@ def formatImage(
             dst_h, dst_w,
         )
         return bgr_fmt, (pad_top, pad_bot, pad_lft, pad_rig), flag
+    if parallel == 'openmp2':
+        flag = postprocess_openmp2(
+            <const unsigned char*>resized.data,
+            rsz_h, rsz_w,
+            pad_lft, pad_top,
+            pad_rig, pad_bot,
+            mean0, mean1, mean2,
+            scale0, scale1, scale2,
+            padding_value,
+            <float*>bgr_fmt.data,
+            dst_h, dst_w,
+        )
+        return bgr_fmt, (pad_top, pad_bot, pad_lft, pad_rig), flag
+    if parallel == 'openmp3':
+        flag = postprocess_openmp3(
+            <const unsigned char*>resized.data,
+            rsz_h, rsz_w,
+            pad_lft, pad_top,
+            pad_rig, pad_bot,
+            mean0, mean1, mean2,
+            scale0, scale1, scale2,
+            padding_value,
+            <float*>bgr_fmt.data,
+            dst_h, dst_w,
+        )
+        return bgr_fmt, (pad_top, pad_bot, pad_lft, pad_rig), flag
+    raise ValueError('unknown parallel method: {}'.format(parallel))
 
 
 Format_Result_Error = Format_Error
