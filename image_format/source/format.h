@@ -4,7 +4,8 @@
 #define Format_Error               0
 #define Format_Native              1
 #define Format_OpenMP              2
-#define Format_OpenMP_AVX2         3
+#define Format_Indexing            3
+#define Format_End2End             4
 
 
 bool preprocess(
@@ -100,7 +101,29 @@ int postprocess_openmp3(
     int dst_w
 );
 
-int postprocess_full(
+int postprocess_indexing(
+    const unsigned char* src,
+    int src_h,
+    int src_w,
+    int rsz_h,
+    int rsz_w,
+    int pad_lft,
+    int pad_top,
+    int pad_rig,
+    int pad_bot,
+    unsigned char padding_value,
+    float mean0,
+    float mean1,
+    float mean2,
+    float scale0,
+    float scale1,
+    float scale2,
+    float* dst,
+    int dst_h,
+    int dst_w
+);
+
+int postprocess_end2end(
     const unsigned char* src,
     int src_h,
     int src_w,

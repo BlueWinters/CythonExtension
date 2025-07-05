@@ -13,7 +13,8 @@ cdef extern from "format.h":
     int Format_Error
     int Format_Native
     int Format_OpenMP
-    int Format_OpenMP_AVX2
+    int Format_Indexing
+    int Format_End2End
 
     bint preprocess(
         int src_h, 
@@ -108,7 +109,7 @@ cdef extern from "format.h":
         int dst_w
     );
 
-    int postprocess_full(
+    int postprocess_indexing(
         const unsigned char* src,
         int src_h,
         int src_w,
@@ -129,6 +130,40 @@ cdef extern from "format.h":
         int dst_h,
         int dst_w
     );
+
+    int postprocess_end2end(
+        const unsigned char* src,
+        int src_h,
+        int src_w,
+        int rsz_h,
+        int rsz_w,
+        int pad_lft,
+        int pad_top,
+        int pad_rig,
+        int pad_bot,
+        unsigned char padding_value,
+        float mean0,
+        float mean1,
+        float mean2,
+        float scale0,
+        float scale1,
+        float scale2,
+        float* dst,
+        int dst_h,
+        int dst_w
+    );
+
+
+"""
+"""
+cimport openmp
+from openmp cimport omp_get_thread_num, omp_get_num_threads
+def testOpenMP():
+    cdef int num_threads = 0
+    # 使用OpenMP函数
+    num_threads = omp_get_num_threads()
+    return num_threads > 0
+
 
 """
 interface for python
@@ -162,14 +197,28 @@ def formatImage(
     preprocess(
         src_h, src_w,
         dst_h, dst_w,
-        rsz_h, rsz_w, 
+        rsz_h, rsz_w,
         pad_lft, pad_rig,
         pad_top, pad_bot,
     )
 
     cdef np.ndarray[np.float32_t, ndim=4, mode="c"] bgr_fmt = np.empty((1, 3, dst_h, dst_w), dtype=np.float32)
-    if parallel == 'openmp_full':
-        flag = postprocess_full(
+    if parallel == 'openmp_end2end':
+        flag = postprocess_end2end(
+            <const unsigned char*>src.data,
+            src_h, src_w,
+            rsz_h, rsz_w,
+            pad_lft, pad_top,
+            pad_rig, pad_bot,
+            padding_value,
+            mean0, mean1, mean2,
+            scale0, scale1, scale2,
+            <float*>bgr_fmt.data,
+            dst_h, dst_w,
+        )
+        return bgr_fmt, (pad_top, pad_bot, pad_lft, pad_rig), flag
+    if parallel == 'openmp_indexing':
+        flag = postprocess_indexing(
             <const unsigned char*>src.data,
             src_h, src_w,
             rsz_h, rsz_w,
@@ -242,4 +291,5 @@ def formatImage(
 Format_Result_Error = Format_Error
 Format_Result_Native = Format_Native
 Format_Result_OpenMP = Format_OpenMP
-Format_Result_OpenMP_AVX2 = Format_OpenMP_AVX2
+Format_Result_Indexing = Format_Indexing
+Format_Result_End2End = Format_End2End
