@@ -82,7 +82,7 @@ void resizeAndTranspose(
         src_h, src_w, dst_h, dst_w, IndexBufferVector);
     std::vector<InterpolationIndex>& index_vector = index_buffer.index;
 
-    #pragma omp parallel for collapse(3)
+    #pragma omp parallel for num_threads(3)
     for (int c = 0; c < 3; ++c) {
         for (int idx = 0; idx < dst_h * dst_w; ++idx) {
             int y = idx / dst_w;
@@ -132,7 +132,6 @@ void paddingAndNormalizes(
 )
 {
     const int dst_size = dst_h * dst_w;
-    const int rsz_size = rsz_h * rsz_w;
     float val0 = (float(padding_value) - mean0) * scale0;
     float val1 = (float(padding_value) - mean1) * scale1;
     float val2 = (float(padding_value) - mean2) * scale2;

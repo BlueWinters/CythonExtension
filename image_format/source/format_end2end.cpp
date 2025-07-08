@@ -174,7 +174,6 @@ int postprocess_end2end_v2(
     const float val1 = (float(padding_value) - mean1) * scale1;
     const float val2 = (float(padding_value) - mean2) * scale2;
 
-    // 计算resize比例
     const float scale_y = float(src_h) / float(rsz_h);
     const float scale_x = float(src_w) / float(rsz_w);
 
@@ -186,9 +185,8 @@ int postprocess_end2end_v2(
         const int pre_size_c = c * dst_size;
 
         const int thread_count = std::min(4, omp_get_max_threads() / 3);
-        #pragma omp parallel for num_threads(2) collapse(2)
+        #pragma omp parallel for num_threads(thread_count) collapse(2)
         for (int y = 0; y < dst_h; ++y) {
-            // int pre_size_cy = pre_size_c + y * dst_w;
             for (int x = 0; x < dst_w; ++x) {
                 int pre_size_cy = pre_size_c + y * dst_w;
                 int dst_idx = pre_size_cy + x;  // c * dst_size + y * dst_w + x;
@@ -217,7 +215,6 @@ int postprocess_end2end_v2(
                     float v1 = hx * v10 + lx * v11;
                     float v = roundf(hy * v0 + ly * v1);
                     // float v = hy * v0 + ly * v1;
-                    // 归一化
                     dst[dst_idx] = (v - mean) * scale;
                 }
                else {
