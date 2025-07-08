@@ -8,6 +8,8 @@
 #define Format_End2End             4
 
 
+int getVersionOpenMP();
+
 bool preprocess(
     int src_h, 
     int src_w, 
@@ -101,6 +103,26 @@ int postprocess_openmp3(
     int dst_w
 );
 
+int postprocess_openmp4(
+    const unsigned char* src,
+    int src_h,
+    int src_w,
+    int pad_lft,
+    int pad_top,
+    int pad_rig,
+    int pad_bot,
+    float mean0,
+    float mean1,
+    float mean2,
+    float scale0,
+    float scale1,
+    float scale2,
+    unsigned char padding_value,
+    float* dst,
+    int dst_h,
+    int dst_w
+);
+
 int postprocess_indexing(
     const unsigned char* src,
     int src_h,
@@ -123,7 +145,29 @@ int postprocess_indexing(
     int dst_w
 );
 
-int postprocess_end2end(
+int postprocess_end2end_v1(
+    const unsigned char* src,
+    int src_h,
+    int src_w,
+    int rsz_h,
+    int rsz_w,
+    int pad_lft,
+    int pad_top,
+    int pad_rig,
+    int pad_bot,
+    unsigned char padding_value,
+    float mean0,
+    float mean1,
+    float mean2,
+    float scale0,
+    float scale1,
+    float scale2,
+    float* dst,
+    int dst_h,
+    int dst_w
+);
+
+int postprocess_end2end_v2(
     const unsigned char* src,
     int src_h,
     int src_w,

@@ -9,8 +9,8 @@
 
 
 struct InterpolationIndex {
-    int y0, x0, y1, x1; // 四个最近邻像素的位置
-    float ly, lx, hy, hx; // 插值权重
+    int y0, x0, y1, x1;
+    float ly, lx, hy, hx;
 };
 
 struct InterpolationIndexBuffer {
@@ -31,8 +31,8 @@ InterpolationIndexBuffer& buildInterpolateIndex(
 {
     for (int n = 0; n < index_buffer_vector.size(); n++) {
         InterpolationIndexBuffer& buffer = index_buffer_vector[n];
-        if (buffer.src_h == src_h && buffer.src_w == buffer.src_w &&
-            buffer.dst_h == dst_h && buffer.dst_w == buffer.dst_w) {
+        if (buffer.src_h == src_h && buffer.src_w == src_w &&
+            buffer.dst_h == dst_h && buffer.dst_w == dst_w) {
             return buffer;
         }
     }
@@ -66,7 +66,6 @@ InterpolationIndexBuffer& buildInterpolateIndex(
         }
     }
 
-    //printf("build index: %d, %d, %d, %d\n", src_h, src_w, dst_h, dst_w);
     return buffer;
 }
 
@@ -83,7 +82,7 @@ void resizeAndTranspose(
         src_h, src_w, dst_h, dst_w, IndexBufferVector);
     std::vector<InterpolationIndex>& index_vector = index_buffer.index;
 
-    #pragma omp parallel for num_threads(3)
+    #pragma omp parallel for collapse(3)
     for (int c = 0; c < 3; ++c) {
         for (int idx = 0; idx < dst_h * dst_w; ++idx) {
             int y = idx / dst_w;
@@ -113,7 +112,7 @@ void resizeAndTranspose(
 }
 
 void paddingAndNormalizes(
-    float* fmt,      // 注意：输入已是float且为CHW格式
+    float* fmt,
     int rsz_h,
     int rsz_w,
     int pad_lft,
@@ -138,7 +137,6 @@ void paddingAndNormalizes(
     float val1 = (float(padding_value) - mean1) * scale1;
     float val2 = (float(padding_value) - mean2) * scale2;
 
-    // 先填充padding区域
     #pragma omp parallel for num_threads(3)
     for (int c = 0; c < 3; ++c) {
         float pad_val = (c == 0 ? val0 : (c == 1 ? val1 : val2));
@@ -147,7 +145,6 @@ void paddingAndNormalizes(
         }
     }
 
-    // 再填充有效区域并归一化
     #pragma omp parallel for num_threads(3)
     for (int c = 0; c < 3; ++c) {
         float mean = (c == 0 ? mean0 : (c == 1 ? mean1 : mean2));
@@ -161,29 +158,6 @@ void paddingAndNormalizes(
                 dst[dst_idx] = (fmt[src_idx] - mean) * scale;
             }
         }
-
-        // const __m256 vmean = _mm256_set1_ps(mean);
-        // const __m256 vscale = _mm256_set1_ps(scale);
-        // float* src_c = fmt + c * rsz_size;
-        // float* dst_c = dst + c * dst_size + pad_top * dst_w + pad_lft;
-        // for (int y = 0; y < rsz_h; ++y) {
-        //     float* src_row = src_c + y * rsz_w;
-        //     float* dst_row = dst_c + y * dst_w;
-
-        //     int x = 0;
-
-        //     for (; x + 8 <= rsz_w; x += 8) {
-        //         __m256 src_v = _mm256_loadu_ps(src_row + x);
-        //         src_v = _mm256_sub_ps(src_v, vmean);
-        //         src_v = _mm256_mul_ps(src_v, vscale);
-        //         _mm256_storeu_ps(dst_row + x, src_v);
-        //     }
-
-        //     // 处理剩余像素
-        //     for (; x < rsz_w; ++x) {
-        //         dst_row[x] = (src_row[x] - mean) * scale;
-        //     }
-        // }
     }
 }
 

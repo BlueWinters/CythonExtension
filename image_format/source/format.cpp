@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 #include "format.h"
+#include "assign.h"
 
 
 #if defined(_MSC_VER) // MSVC
@@ -38,6 +39,14 @@ bool isSSE2Supported() { return false; }
 bool isAVX2Supported() { return false; }
 #endif
 
+
+int getVersionOpenMP() {
+#ifdef _OPENMP
+    return _OPENMP;
+#else
+    return 0;
+#endif
+}
 
 bool preprocess(
     int src_h, 
@@ -154,7 +163,6 @@ int postprocess_openmp1(
         for (int y = 0; y < dst_h; ++y) {
             for (int x = 0; x < dst_w; ++x) {
                 int dst_idx = c * size + y * dst_w + x;
-                // 判断是否在padding区
                 if (y < pad_top || y >= pad_top + src_h || x < pad_lft || x >= pad_lft + src_w) {
                     dst[dst_idx] = pad_val;
                 } else {
@@ -189,20 +197,13 @@ int postprocess_openmp2(
     int dst_w
 )
 {
-    const int size = dst_h * dst_w;
     float val0 = (float(padding_value) - mean0) * scale0;
     float val1 = (float(padding_value) - mean1) * scale1;
     float val2 = (float(padding_value) - mean2) * scale2;
+    const float vals[3] = {val0, val1, val2};
+    assignValue1(dst, dst_h, dst_w, vals);
 
-    #pragma omp parallel for num_threads(3)
-    for (int c = 0; c < 3; ++c) {
-        int pre_size = c * size;
-        float val = (c == 0 ? val0 : (c == 1 ? val1 : val2));
-        for (int i = 0; i < size; ++i) {
-            dst[pre_size + i] = val;
-        }
-    }
-
+    const int size = dst_h * dst_w;
     #pragma omp parallel for num_threads(3)
     for (int c = 0; c < 3; ++c) {
         float mean = (c == 0 ? mean0 : (c == 1 ? mean1 : mean2));
@@ -223,8 +224,53 @@ int postprocess_openmp2(
     return Format_OpenMP;
 }
 
-
 int postprocess_openmp3(
+    const unsigned char* src,
+    int src_h,
+    int src_w,
+    int pad_lft,
+    int pad_top,
+    int pad_rig,
+    int pad_bot,
+    float mean0,
+    float mean1,
+    float mean2,
+    float scale0,
+    float scale1,
+    float scale2,
+    unsigned char padding_value,
+    float* dst,
+    int dst_h,
+    int dst_w
+)
+{
+    float val0 = (float(padding_value) - mean0) * scale0;
+    float val1 = (float(padding_value) - mean1) * scale1;
+    float val2 = (float(padding_value) - mean2) * scale2;
+    const float vals[3] = {val0, val1, val2};
+    assignValue1(dst, dst_h, dst_w, vals);
+
+    const int size = dst_h * dst_w;
+    #pragma omp parallel for num_threads(6) schedule(static)
+    for (int n = 0; n < src_h * src_w; ++n) {
+        int y = n / src_w;
+        int x = n % src_w;
+        int dst_y = y + pad_top;
+        int dst_x = x + pad_lft;
+        int src_idx = (y * src_w + x) * 3;
+        int dst_idx0 = 0 * size + dst_y * dst_w + dst_x;
+        int dst_idx1 = 1 * size + dst_y * dst_w + dst_x;
+        int dst_idx2 = 2 * size + dst_y * dst_w + dst_x;
+        dst[dst_idx0] = (float(src[src_idx + 0]) - mean0) * scale0;
+        dst[dst_idx1] = (float(src[src_idx + 1]) - mean1) * scale1;
+        dst[dst_idx2] = (float(src[src_idx + 2]) - mean2) * scale2;
+   }
+
+    return Format_OpenMP;
+}
+
+
+int postprocess_openmp4(
     const unsigned char* src,
     int src_h,
     int src_w,
@@ -248,21 +294,8 @@ int postprocess_openmp3(
     float val0 = (float(padding_value) - mean0) * scale0;
     float val1 = (float(padding_value) - mean1) * scale1;
     float val2 = (float(padding_value) - mean2) * scale2;
-
-    #pragma omp parallel for num_threads(3)
-    for (int c = 0; c < 3; ++c) {
-        int pre_size = c * size;
-        float val = (c == 0 ? val0 : (c == 1 ? val1 : val2));
-        __m256 vval = _mm256_set1_ps(val);
-        int i = 0;
-        float* ptr = dst + pre_size;
-        for (; i + 7 < size; i += 8) {
-            _mm256_storeu_ps(ptr + i, vval);
-        }
-        for (; i < size; ++i) {
-            ptr[i] = val;
-        }
-    }
+    const float vals[3] = {val0, val1, val2};
+    assignValue1(dst, dst_h, dst_w, vals);
 
     #pragma omp parallel for num_threads(3)
     for (int c = 0; c < 3; ++c) {
@@ -305,6 +338,3 @@ int postprocess_openmp3(
     }
     return Format_OpenMP;
 }
-
-
-
