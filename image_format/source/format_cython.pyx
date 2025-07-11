@@ -12,8 +12,15 @@ np.import_array()  # 初始化 numpy C-API
 
 cdef extern from "format.h":
     int Format_Error
-    int Format_Native
-    int Format_OpenMP
+    int Format1_Native
+    int Format1_OpenMP
+    int Format1_OpenMP_AVX2
+    int Format2_Native
+    int Format2_OpenMP
+    int Format2_OpenMP_AVX2
+    int Format3_Native
+    int Format3_OpenMP
+    int Format3_OpenMP_AVX2
     int Format_Indexing
     int Format_End2End
 
@@ -32,7 +39,7 @@ cdef extern from "format.h":
         int& pad_bot,
     );
 
-    int postprocess_native(
+    int postprocess1_native(
         const unsigned char* src,
         int src_h,
         int src_w,
@@ -52,7 +59,7 @@ cdef extern from "format.h":
         int dst_w
     );
 
-    int postprocess_openmp1(
+    int postprocess1_openmp(
         const unsigned char* src,
         int src_h,
         int src_w,
@@ -72,27 +79,7 @@ cdef extern from "format.h":
         int dst_w
     );
 
-    int postprocess_openmp2(
-        const unsigned char* src,
-        int src_h,
-        int src_w,
-        int pad_lft,
-        int pad_top,
-        int pad_rig, 
-        int pad_bot,
-        float mean0, 
-        float mean1, 
-        float mean2,
-        float scale0,
-        float scale1,
-        float scale2,
-        unsigned char padding_value,
-        float* dst,
-        int dst_h, 
-        int dst_w
-    );
-    
-    int postprocess_openmp3(
+    int postprocess1_openmp_sse2(
         const unsigned char* src,
         int src_h,
         int src_w,
@@ -112,7 +99,47 @@ cdef extern from "format.h":
         int dst_w
     );
 
-    int postprocess_openmp4(
+    int postprocess1_openmp_avx2(
+        const unsigned char* src,
+        int src_h,
+        int src_w,
+        int pad_lft,
+        int pad_top,
+        int pad_rig, 
+        int pad_bot,
+        float mean0, 
+        float mean1, 
+        float mean2,
+        float scale0,
+        float scale1,
+        float scale2,
+        unsigned char padding_value,
+        float* dst,
+        int dst_h, 
+        int dst_w
+    );
+
+    int postprocess2_native(
+        const unsigned char* src,
+        int src_h,
+        int src_w,
+        int pad_lft,
+        int pad_top,
+        int pad_rig, 
+        int pad_bot,
+        float mean0, 
+        float mean1, 
+        float mean2,
+        float scale0,
+        float scale1,
+        float scale2,
+        unsigned char padding_value,
+        float* dst,
+        int dst_h, 
+        int dst_w
+    );
+
+    int postprocess2_openmp(
         const unsigned char* src,
         int src_h,
         int src_w,
@@ -132,7 +159,67 @@ cdef extern from "format.h":
         int dst_w
     );
 
-    int postprocess_openmp5(
+    int postprocess2_openmp_avx2(
+        const unsigned char* src,
+        int src_h,
+        int src_w,
+        int pad_lft,
+        int pad_top,
+        int pad_rig,
+        int pad_bot,
+        float mean0,
+        float mean1,
+        float mean2,
+        float scale0,
+        float scale1,
+        float scale2,
+        unsigned char padding_value,
+        float* dst,
+        int dst_h,
+        int dst_w
+    );
+
+    int postprocess3_native(
+        const unsigned char* src,
+        int src_h,
+        int src_w,
+        int pad_lft,
+        int pad_top,
+        int pad_rig,
+        int pad_bot,
+        float mean0,
+        float mean1,
+        float mean2,
+        float scale0,
+        float scale1,
+        float scale2,
+        unsigned char padding_value,
+        float* dst,
+        int dst_h,
+        int dst_w
+    );
+
+    int postprocess3_openmp(
+        const unsigned char* src,
+        int src_h,
+        int src_w,
+        int pad_lft,
+        int pad_top,
+        int pad_rig,
+        int pad_bot,
+        float mean0,
+        float mean1,
+        float mean2,
+        float scale0,
+        float scale1,
+        float scale2,
+        unsigned char padding_value,
+        float* dst,
+        int dst_h,
+        int dst_w
+    );
+
+    int postprocess3_openmp_avx2(
         const unsigned char* src,
         int src_h,
         int src_w,
@@ -242,11 +329,11 @@ interface for python
 """
 def formatImage(
     np.ndarray[np.uint8_t, ndim=3]  src,
-    int dst_h, 
+    int dst_h,
     int dst_w,
     int padding_value,
-    float mean0, 
-    float mean1, 
+    float mean0,
+    float mean1,
     float mean2,
     float scale0,
     float scale1,
@@ -306,8 +393,8 @@ def formatImage(
         return bgr_fmt, (pad_top, pad_bot, pad_lft, pad_rig), flag
 
     cdef np.ndarray[np.uint8_t, ndim=3, mode="c"] resized = cv2.resize(src, (rsz_w, rsz_h))
-    if parallel == 'native':
-        flag = postprocess_native(
+    if parallel == 'native1':
+        flag = postprocess1_native(
             <const unsigned char*>resized.data,
             rsz_h, rsz_w,
             pad_lft, pad_top,
@@ -319,8 +406,8 @@ def formatImage(
             dst_h, dst_w,
         )
         return bgr_fmt, (pad_top, pad_bot, pad_lft, pad_rig), flag
-    if parallel == 'openmp1':
-        flag = postprocess_openmp1(
+    if parallel == 'native1_openmp':
+        flag = postprocess1_openmp(
             <const unsigned char*>resized.data,
             rsz_h, rsz_w,
             pad_lft, pad_top,
@@ -332,8 +419,8 @@ def formatImage(
             dst_h, dst_w,
         )
         return bgr_fmt, (pad_top, pad_bot, pad_lft, pad_rig), flag
-    if parallel == 'openmp2':
-        flag = postprocess_openmp2(
+    if parallel == 'native1_openmp_sse2':
+        flag = postprocess1_openmp_sse2(
             <const unsigned char*>resized.data,
             rsz_h, rsz_w,
             pad_lft, pad_top,
@@ -345,8 +432,8 @@ def formatImage(
             dst_h, dst_w,
         )
         return bgr_fmt, (pad_top, pad_bot, pad_lft, pad_rig), flag
-    if parallel == 'openmp3':
-        flag = postprocess_openmp3(
+    if parallel == 'native1_openmp_avx2':
+        flag = postprocess1_openmp_avx2(
             <const unsigned char*>resized.data,
             rsz_h, rsz_w,
             pad_lft, pad_top,
@@ -358,8 +445,73 @@ def formatImage(
             dst_h, dst_w,
         )
         return bgr_fmt, (pad_top, pad_bot, pad_lft, pad_rig), flag
-    if parallel == 'openmp4':
-        flag = postprocess_openmp4(
+    if parallel == 'native2':
+        flag = postprocess2_native(
+            <const unsigned char*>resized.data,
+            rsz_h, rsz_w,
+            pad_lft, pad_top,
+            pad_rig, pad_bot,
+            mean0, mean1, mean2,
+            scale0, scale1, scale2,
+            padding_value,
+            <float*>bgr_fmt.data,
+            dst_h, dst_w,
+        )
+        return bgr_fmt, (pad_top, pad_bot, pad_lft, pad_rig), flag
+    if parallel == 'native2_openmp':
+        flag = postprocess2_openmp(
+            <const unsigned char*>resized.data,
+            rsz_h, rsz_w,
+            pad_lft, pad_top,
+            pad_rig, pad_bot,
+            mean0, mean1, mean2,
+            scale0, scale1, scale2,
+            padding_value,
+            <float*>bgr_fmt.data,
+            dst_h, dst_w,
+        )
+        return bgr_fmt, (pad_top, pad_bot, pad_lft, pad_rig), flag
+    if parallel == 'native2_openmp_avx2':
+        flag = postprocess2_openmp_avx2(
+            <const unsigned char*>resized.data,
+            rsz_h, rsz_w,
+            pad_lft, pad_top,
+            pad_rig, pad_bot,
+            mean0, mean1, mean2,
+            scale0, scale1, scale2,
+            padding_value,
+            <float*>bgr_fmt.data,
+            dst_h, dst_w,
+        )
+        return bgr_fmt, (pad_top, pad_bot, pad_lft, pad_rig), flag
+    if parallel == 'native3':
+        flag = postprocess3_native(
+            <const unsigned char*>resized.data,
+            rsz_h, rsz_w,
+            pad_lft, pad_top,
+            pad_rig, pad_bot,
+            mean0, mean1, mean2,
+            scale0, scale1, scale2,
+            padding_value,
+            <float*>bgr_fmt.data,
+            dst_h, dst_w,
+        )
+        return bgr_fmt, (pad_top, pad_bot, pad_lft, pad_rig), flag
+    if parallel == 'native3_openmp':
+        flag = postprocess3_openmp(
+            <const unsigned char*>resized.data,
+            rsz_h, rsz_w,
+            pad_lft, pad_top,
+            pad_rig, pad_bot,
+            mean0, mean1, mean2,
+            scale0, scale1, scale2,
+            padding_value,
+            <float*>bgr_fmt.data,
+            dst_h, dst_w,
+        )
+        return bgr_fmt, (pad_top, pad_bot, pad_lft, pad_rig), flag
+    if parallel == 'native3_openmp_avx2':
+        flag = postprocess3_openmp_avx2(
             <const unsigned char*>resized.data,
             rsz_h, rsz_w,
             pad_lft, pad_top,
@@ -374,8 +526,15 @@ def formatImage(
     raise ValueError('unknown parallel method: {}'.format(parallel))
 
 
-Format_Result_Error = Format_Error
-Format_Result_Native = Format_Native
-Format_Result_OpenMP = Format_OpenMP
-Format_Result_Indexing = Format_Indexing
-Format_Result_End2End = Format_End2End
+Result_Format_Error = Format_Error
+Result_Format1_Native = Format1_Native
+Result_Format1_OpenMP = Format1_OpenMP
+Result_Format1_OpenMP_AVX2 = Format1_OpenMP_AVX2
+Result_Format2_Native = Format2_Native
+Result_Format2_OpenMP = Format2_OpenMP
+Result_Format2_OpenMP_AVX2 = Format2_OpenMP_AVX2
+Result_Format3_Native = Format3_Native
+Result_Format3_OpenMP = Format3_OpenMP
+Result_Format3_OpenMP_AVX2 = Format3_OpenMP_AVX2
+Result_Format_Indexing = Format_Indexing
+Result_Format_End2End = Format_End2End

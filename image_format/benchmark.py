@@ -1,4 +1,3 @@
-
 import cv2
 import numpy as np
 import time
@@ -21,12 +20,13 @@ def functionWrapper(function, prefix, path_save):
             end = time.perf_counter()
             time_list.append(end - beg)
         time_array = np.array(time_list, dtype=np.float32) * 1000 * 1000
-        # pickle.dump(time_array, open(path_save, 'wb'))
+        pickle.dump(time_array, open(path_save, 'wb'))
         t_min, t_max = np.min(time_array), np.max(time_array)
         t_avg, t_var = np.mean(time_array), np.std(time_array)
         print('success call: {:<48}({:12.1f} ns, {:12.1f} ns, {:12.1f} {} {:12.1f} ns)'.format(
             prefix, t_min, t_max, t_avg, chr(177), t_var))
         return output
+
     return callFunction
 
 
@@ -61,17 +61,21 @@ def check():
 
     def printResult(method):
         fmt, pad, flag = format_cython.formatImage(src, dst_h, dst_w, padding_value, *mean_value, *scale_value, method)
-        print('check {:<16}: '.format(method), flag, pad1, pad, np.abs(fmt1 - fmt).sum(), np.abs(fmt1 - fmt).max())
-        toTxt(fmt, 'cache/{}.txt'.format(method))
+        print('check {:<32}: '.format(method), flag, pad1, pad, np.abs(fmt1 - fmt).sum(), np.abs(fmt1 - fmt).max())
+        # toTxt(fmt, 'cache/{}.txt'.format(method))
 
     fmt1, pad1 = formatWithNumpy(src, dst_h, dst_w, padding_value, mean_value, scale_value)
-    printResult('native')
     printResult('openmp_indexing')
     printResult('openmp_end2end')
-    printResult('openmp1')
-    printResult('openmp2')
-    printResult('openmp3')
-    printResult('openmp4')
+    printResult('native1')
+    printResult('native1_openmp')
+    printResult('native1_openmp_avx2')
+    printResult('native2')
+    printResult('native2_openmp')
+    printResult('native2_openmp_avx2')
+    printResult('native3')
+    printResult('native3_openmp')
+    printResult('native3_openmp_avx2')
 
 
 def formatWithNumpy(bgr, dst_h, dst_w, padding_value, mean, scale):
@@ -97,57 +101,49 @@ def formatWithNumpy(bgr, dst_h, dst_w, padding_value, mean, scale):
 
 
 def performanceOnSingle(dst_h, dst_w):
-    num = 100
+    num = 10000
     padding = 0
     mean = (104, 117, 123)
     scale = (1., 1., 1.)
 
-    print('---------------------------------')
+    print('==================================')
     functionWrapper(formatWithNumpy, f'python-({dst_h}, {dst_w})', f'python_numpy_{dst_h}_{dst_w}.pkl')(
         num, dst_h, dst_w, padding, mean, scale)
-    functionWrapper(format_cython.formatImage, f'cython-native-({dst_h}, {dst_w})', f'cython_native_{dst_h}_{dst_w}.pkl')(
-        num, dst_h, dst_w, padding, *mean, *scale, 'native')
     functionWrapper(format_cython.formatImage, f'cython-openmp_indexing-({dst_h}, {dst_w})', f'cython_openmp_indexing_{dst_h}_{dst_w}.pkl')(
         num, dst_h, dst_w, padding, *mean, *scale, 'openmp_indexing')
     functionWrapper(format_cython.formatImage, f'cython-openmp_end2end-({dst_h}, {dst_w})', f'cython_openmp_end2end_{dst_h}_{dst_w}.pkl')(
         num, dst_h, dst_w, padding, *mean, *scale, 'openmp_end2end')
-    functionWrapper(format_cython.formatImage, f'cython-openmp1-({dst_h}, {dst_w})', f'cython_openmp1_{dst_h}_{dst_w}.pkl')(
-        num, dst_h, dst_w, padding, *mean, *scale, 'openmp1')
-    functionWrapper(format_cython.formatImage, f'cython-openmp2-({dst_h}, {dst_w})', f'cython_openmp2_{dst_h}_{dst_w}.pkl')(
-        num, dst_h, dst_w, padding, *mean, *scale, 'openmp2')
-    functionWrapper(format_cython.formatImage, f'cython-openmp3-({dst_h}, {dst_w})', f'cython_openmp3_{dst_h}_{dst_w}.pkl')(
-        num, dst_h, dst_w, padding, *mean, *scale, 'openmp3')
-    functionWrapper(format_cython.formatImage, f'cython-openmp4-({dst_h}, {dst_w})', f'cython_openmp4_{dst_h}_{dst_w}.pkl')(
-        num, dst_h, dst_w, padding, *mean, *scale, 'openmp4')
 
-
-def getAlignedArray(shape, dtype, alignment=64):
-    n_bytes = np.prod(shape) * np.dtype(dtype).itemsize
-    buffer = np.empty(n_bytes + alignment, dtype=np.uint8)
-    address = buffer.ctypes.data
-    offset = (alignment - (address % alignment)) % alignment
-    aligned_buffer = buffer[offset:offset + n_bytes]
-    return aligned_buffer.view(dtype).reshape(shape)
-
-
-def checkOpenCV():
-    build_info = cv2.getBuildInformation()
-    print('opencv is linked: ', build_info)
-    print("OpenMP Support:", "Yes" if "OpenMP" in build_info else "No")
-    print("TBB Support:", "Yes" if "TBB" in build_info else "No")
-    print("PThreads Support:", "Yes" if "pthreads" in build_info.lower() else "No")
+    functionWrapper(format_cython.formatImage, f'cython-native1-({dst_h}, {dst_w})', f'cython_native1_{dst_h}_{dst_w}.pkl')(
+        num, dst_h, dst_w, padding, *mean, *scale, 'native1')
+    functionWrapper(format_cython.formatImage, f'cython-native2-({dst_h}, {dst_w})', f'cython_native2_{dst_h}_{dst_w}.pkl')(
+        num, dst_h, dst_w, padding, *mean, *scale, 'native2')
+    functionWrapper(format_cython.formatImage, f'cython-native3-({dst_h}, {dst_w})', f'cython_native3_{dst_h}_{dst_w}.pkl')(
+        num, dst_h, dst_w, padding, *mean, *scale, 'native3')
+    print('---------------------------------')
+    functionWrapper(format_cython.formatImage, f'cython-native1_openmp-({dst_h}, {dst_w})', f'cython_native1_openmp_{dst_h}_{dst_w}.pkl')(
+        num, dst_h, dst_w, padding, *mean, *scale, 'native1_openmp')
+    functionWrapper(format_cython.formatImage, f'cython-native2_openmp-({dst_h}, {dst_w})', f'cython_native2_openmp_{dst_h}_{dst_w}.pkl')(
+        num, dst_h, dst_w, padding, *mean, *scale, 'native2_openmp')
+    functionWrapper(format_cython.formatImage, f'cython-native3_openmp-({dst_h}, {dst_w})', f'cython_native3_openmp_{dst_h}_{dst_w}.pkl')(
+        num, dst_h, dst_w, padding, *mean, *scale, 'native3_openmp')
+    print('---------------------------------')
+    functionWrapper(format_cython.formatImage, f'cython-native1_openmp_avx2-({dst_h}, {dst_w})', f'cython_native1_openmp_avx2_{dst_h}_{dst_w}.pkl')(
+        num, dst_h, dst_w, padding, *mean, *scale, 'native1_openmp_avx2')
+    functionWrapper(format_cython.formatImage, f'cython-native2_openmp_avx2-({dst_h}, {dst_w})', f'cython_native2_openmp_avx2_{dst_h}_{dst_w}.pkl')(
+        num, dst_h, dst_w, padding, *mean, *scale, 'native2_openmp_avx2')
+    functionWrapper(format_cython.formatImage, f'cython-native3_openmp_avx2-({dst_h}, {dst_w})', f'cython_native3_openmp_avx2_{dst_h}_{dst_w}.pkl')(
+        num, dst_h, dst_w, padding, *mean, *scale, 'native3_openmp_avx2')
 
 
 if __name__ == '__main__':
     np.set_printoptions(threshold=np.inf)
     print('openmp is linked: ', format_cython.testOpenMP())
     print('openmp version: ', format_cython.testOpenMPVersion())
-    checkOpenCV()
     check()
     performanceOnSingle(256, 256)
     performanceOnSingle(512, 512)
     performanceOnSingle(768, 768)
     performanceOnSingle(1024, 1024)
-    # arr = getAlignedArray((640, 640), dtype=np.float32, alignment=32)
-    # print(arr.ctypes.data % 64 == 0)
+
 

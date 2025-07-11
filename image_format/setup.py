@@ -17,7 +17,7 @@ system = platform.system().lower()
 extra_compile_args = []
 extra_link_args = []
 if system == 'linux':
-    extra_compile_args = ['-fopenmp', '-msse2', '-mavx2']
+    extra_compile_args = ['-fopenmp', '-msse2', '-mavx2', '-O3', '-march=native']
     extra_link_args = ['-fopenmp', '-msse2', '-mavx2']
 if system == 'windows':
     extra_compile_args = ['/openmp:experimental', '/arch:AVX2', '/O2']
@@ -38,7 +38,7 @@ setup(
                 'source/assign.cpp'
             ],
             language='c++',
-            define_macros=[("NPY_NO_DEPRECATED_API", None), ("SIZEOF_VOID_P", "8")],  # disable numpy deprecation warnings
+            define_macros=[("NPY_NO_DEPRECATED_API", None), ],  # disable numpy deprecation warnings
             extra_compile_args=extra_compile_args,
             extra_link_args=extra_link_args,
             include_dirs=[numpy.get_include()],
