@@ -338,7 +338,7 @@ def formatImage(
     float scale0,
     float scale1,
     float scale2,
-    str parallel = 'openmp',
+    str parallel = 'native1_openmp_avx2',
 ):
     if not (dst_h > 0 and dst_w > 0):
         raise ValueError("target shape error, dst_h/dst_w > 0")
